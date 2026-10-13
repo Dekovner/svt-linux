@@ -1461,7 +1461,39 @@ static gboolean on_options_draw(GtkWidget* widget, cairo_t* cr, gpointer) {
   return FALSE;
 }
 
+// Support Ctrl+V / Ctrl+C / Ctrl+X / Ctrl+A even when Russian keyboard layout is active
+static gboolean on_inherited_key_press(GtkWidget* widget, GdkEventKey* event, gpointer) {
+  if ((event->state & GDK_CONTROL_MASK) && !(event->state & (GDK_MOD1_MASK | GDK_SUPER_MASK))) {
+    // Only intercept when keyval is non-ASCII (e.g. Cyrillic layout), so normal English shortcuts aren't doubled
+    if (event->keyval > 127) {
+      GtkTextView* tv = GTK_TEXT_VIEW(widget);
+      GtkTextBuffer* buf = gtk_text_view_get_buffer(tv);
+      GtkClipboard* cb = gtk_widget_get_clipboard(widget, GDK_SELECTION_CLIPBOARD);
+      switch (event->hardware_keycode) {
+        case 55: // Physical 'V' ('М' in RU)
+          gtk_text_buffer_paste_clipboard(buf, cb, nullptr, TRUE);
+          return TRUE;
+        case 54: // Physical 'C' ('С' in RU)
+          gtk_text_buffer_copy_clipboard(buf, cb);
+          return TRUE;
+        case 53: // Physical 'X' ('Ч' in RU)
+          gtk_text_buffer_cut_clipboard(buf, cb, TRUE);
+          return TRUE;
+        case 38: { // Physical 'A' ('Ф' in RU)
+          GtkTextIter start, end;
+          gtk_text_buffer_get_bounds(buf, &start, &end);
+          gtk_text_buffer_select_range(buf, &start, &end);
+          return TRUE;
+        }
+      }
+    }
+  }
+  return FALSE;
+}
+
 int main(int argc, char** argv) {
+  // Prefer X11 backend so SVT shares the X11 clipboard directly with osu! (Wine/XWayland) on niri/Wayland
+  setenv("GDK_BACKEND", "x11,wayland", 0);
   gtk_init(&argc, &argv);
 
   // Apply compact Win32-like CSS so every widget matches the 300x350 layout 1:1
@@ -1555,6 +1587,7 @@ int main(int argc, char** argv) {
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(ui.inherited_text), GTK_WRAP_CHAR);
   ui.inherited_buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(ui.inherited_text));
   g_signal_connect(ui.inherited_buf, "changed", G_CALLBACK(on_generic_option_changed), &ui);
+  g_signal_connect(ui.inherited_text, "key-press-event", G_CALLBACK(on_inherited_key_press), &ui);
   gtk_container_add(GTK_CONTAINER(text_scroll), ui.inherited_text);
   gtk_box_pack_start(GTK_BOX(root_vbox), text_scroll, TRUE, TRUE, 0);
 
