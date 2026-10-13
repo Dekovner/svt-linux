@@ -31,6 +31,30 @@ static constexpr int32_t DEFAULT_WINDOW_HEIGHT = 350;
 static constexpr const char* WINDOW_TITLE = "SVT";
 static constexpr const char* SVT_OPTIONS_FILE = "svt_config.txt";
 
+static std::string get_app_data_file(const char* name) {
+  std::error_code ec;
+  if (fs::exists(SVT_OPTIONS_FILE, ec)) {
+    return name;
+  }
+  const char* xdg = std::getenv("XDG_CONFIG_HOME");
+  fs::path dir;
+  if (xdg && *xdg) {
+    dir = fs::path(xdg) / "svt";
+  } else {
+    const char* home = std::getenv("HOME");
+    if (home && *home) {
+      dir = fs::path(home) / ".config" / "svt";
+    }
+  }
+  if (!dir.empty()) {
+    fs::create_directories(dir, ec);
+    if (!ec) {
+      return (dir / name).string();
+    }
+  }
+  return name;
+}
+
 // ============================================================================
 // AppOptions (matches ui::AppOptions & svt_config.txt JSON schema 1:1)
 // ============================================================================
@@ -726,7 +750,7 @@ struct SVT {
     );
 
     std::error_code ec;
-    fs::copy_file(in_filename, "backup.osu", fs::copy_options::overwrite_existing, ec);
+    fs::copy_file(in_filename, get_app_data_file("backup.osu"), fs::copy_options::overwrite_existing, ec);
     if (ec) {
       return std::format("[backup] error backing up file {}", ec.message());
     }
@@ -810,14 +834,15 @@ static bool exchange_files(const std::string& path_a, const std::string& path_b,
     return true;
   }
   // Fallback if across filesystems
+  std::string temp_path = get_app_data_file("temp.osu");
   std::error_code ec;
-  fs::copy_file(path_a, "temp.osu", fs::copy_options::overwrite_existing, ec);
+  fs::copy_file(path_a, temp_path, fs::copy_options::overwrite_existing, ec);
   if (ec) { err_msg = ec.message(); return false; }
   fs::copy_file(path_b, path_a, fs::copy_options::overwrite_existing, ec);
   if (ec) { err_msg = ec.message(); return false; }
-  fs::copy_file("temp.osu", path_b, fs::copy_options::overwrite_existing, ec);
+  fs::copy_file(temp_path, path_b, fs::copy_options::overwrite_existing, ec);
   if (ec) { err_msg = ec.message(); return false; }
-  fs::remove("temp.osu", ec);
+  fs::remove(temp_path, ec);
   return true;
 }
 
@@ -1052,7 +1077,7 @@ struct UI {
   }
 
   bool save_config() {
-    std::ofstream out_file(SVT_OPTIONS_FILE, std::ios::binary | std::ios::trunc);
+    std::ofstream out_file(get_app_data_file(SVT_OPTIONS_FILE), std::ios::binary | std::ios::trunc);
     if (!out_file.is_open()) {
       return false;
     }
@@ -1127,7 +1152,7 @@ struct UI {
   }
 
   void load_config() {
-    std::ifstream f(SVT_OPTIONS_FILE, std::ios::binary);
+    std::ifstream f(get_app_data_file(SVT_OPTIONS_FILE), std::ios::binary);
     std::string content;
     if (f.is_open()) {
       std::ostringstream ss;
@@ -1225,7 +1250,7 @@ struct UI {
 
   void undo() {
     std::string err_msg;
-    if (!exchange_files(get_entry(in_filename), "backup.osu", err_msg)) {
+    if (!exchange_files(get_entry(in_filename), get_app_data_file("backup.osu"), err_msg)) {
       set_status(std::format("[undo] failed {}", err_msg));
       return;
     }

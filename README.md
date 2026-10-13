@@ -2,23 +2,28 @@
 
 Нативный 1-в-1 порт **[jmagine/svt-rs](https://github.com/jmagine/svt-rs/releases/tag/v1.0.3)** (`v1.0.3`) под Linux на **C++20 + GTK3**.
 
-Работает нативно без Wine, сохраняет идентичную математику расчётов (`f32`), верстку `300x350`, всплывающие подсказки (tooltips), Drag-and-Drop `.osu` файлов и формат конфига `svt_config.txt`.
+Работает нативно без Wine, сохраняет идентичную математику расчётов (`f32`), верстку `300x350`, всплывающие подсказки (tooltips), Drag-and-Drop `.osu` файлов и формат конфига `svt_config.txt` (при запуске из меню приложений конфиг и `backup.osu` хранятся в `~/.config/svt/`).
 
-## Возможности
-- **Режимы интерполяции**: `Lin. SV`, `Exp. SV`, `Pol. SV`, `Sin. SV`, `Flat SV` (`Mult. Scaling`), `Lin. Vol` (включая фикс `v1.0.3` для `Flat SV` масштабирования по BPM на секциях с красными линиями).
-- **Объекты**: `Hits`, `Snaps` (произвольный делитель `X / Y Snapping` + 25% после последней ноты для фейдаутов), `Inh. lines`.
-- **Доп. опции**: `Offset`, `Buffer`, `Min. Spacing`, `Ignore BPM`, `Preview Diff` (`[preview].osu`), авто-бэкап в `backup.osu` и мгновенный `Undo` через атомарный обмен файлов (`renameat2` / `RENAME_EXCHANGE`).
+## Установка в меню приложений (1 команда)
+Чтобы `SVT` появился в меню приложений (Rofi / Wofi / KDE / GNOME) со своей иконкой:
+```bash
+git clone https://github.com/Dekovner/svt-linux.git
+cd svt-linux
+./install.sh
+```
+*(Удалить из меню приложений можно командой `make uninstall`).*
 
-## Запуск готового бинарника
+## Просто запуск без установки
 ```bash
 chmod +x ./svt
 ./svt
 ```
 
 ## Сборка из исходников
-Требуются `g++` (с поддержкой C++20) и заголовки `gtk+-3.0`:
+Требуются `g++` (C++20) и заголовки `gtk+-3.0`:
 ```bash
 make
+make install
 ```
 
 ## Лицензия

@@ -2,4 +2,4 @@ backup.osu
 temp.osu
 svt_config.txt
 *.o
-*.png
+svt_preview.png
