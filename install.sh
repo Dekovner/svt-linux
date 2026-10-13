@@ -21,9 +21,9 @@ Comment=osu! Slider Velocity & Volume Tool (v1.0.3)
 Exec=${PREFIX}/bin/svt
 Icon=svt
 Terminal=false
-Categories=Game;Utility;
+Categories=Utility;
 StartupWMClass=svt
 EOF
 
 update-desktop-database "${PREFIX}/share/applications" 2>/dev/null || true
-echo "[SVT] Установлено в ${PREFIX}/bin/svt и добавлено в меню приложений (svt.desktop)!"
+echo "[SVT] Installed to ${PREFIX}/bin/svt and added to application menu (svt.desktop)!"
